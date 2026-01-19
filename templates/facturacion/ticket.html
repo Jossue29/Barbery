@@ -1,0 +1,30 @@
+{% load static %}
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="/static/css/print.css" rel="stylesheet">
+    <title>Ticket {{ factura.codigo_factura }}</title>
+    <style>
+      body { font-family: Arial, sans-serif; }
+      .ticket { width: 300px; }
+      .center { text-align: center; }
+    </style>
+  </head>
+  <body>
+    <div class="ticket">
+      <div class="center"><strong>Barbería</strong></div>
+      <div class="center">Factura: {{ factura.codigo_factura }}</div>
+      <div>Cliente: {{ factura.cliente.nombre }}</div>
+      <div>Tel: {{ factura.cliente.telefono }}</div>
+      <hr>
+      {% for d in factura.detalles.all %}
+      <div>{{ d.corte.nombre_corte }} x{{ d.cantidad }}  {{ d.subtotal }}</div>
+      {% endfor %}
+      <hr>
+      <div class="center"><strong>Total: {{ factura.total }}</strong></div>
+      <div class="center mt-2"><button onclick="window.print()">Imprimir</button></div>
+    </div>
+  </body>
+</html>
