@@ -1,3 +1,14 @@
 @page { size: 80mm; margin: 0; }
 body { margin: 0; }
 .ticket { width: 80mm; padding: 4mm; font-size: 12px; }
+
+/* Empuja el contenido cuando el sidebar es fixed */
+.content-wrapper {
+  margin-left: 256px;
+  transition: margin-left 0.3s ease;
+}
+
+/* Cuando el sidebar está oculto */
+.sidebar-hide .content-wrapper {
+  margin-left: 0;
+}

@@ -1,78 +1,52 @@
 {% load static %}
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Barbery{% endblock %}</title>
 
-  <!-- CoreUI CSS -->
-  <link rel="stylesheet" href="{% static 'CSS/print.css' %}">
-  <link href="https://cdn.jsdelivr.net/npm/@coreui/coreui@5.4.3/dist/css/coreui.min.css" rel="stylesheet" integrity="sha384-oMIIhJL1T5s+PxJr6+Qb0pO1IRFB6OGMM+J57UBT3UQKxSVsb++MkXpu9cLqaJxu" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/@coreui/coreui@5.4.3/dist/css/coreui.min.css" rel="stylesheet">
+  
+  <style>
+    /* Ajuste para que el contenido empiece después del navbar */
+    .wrapper {
+      width: 100%;
+      transition: padding-left 0.15s;
+    }
+    
+    /* Si el sidebar es fijo, el contenido debe desplazarse a la derecha */
+    @media (min-width: 992px) {
+      .wrapper {
+        padding-left: 256px; /* Ancho estándar del sidebar de CoreUI */
+      }
+    }
+
+    /* CoreUI maneja el sticky header, pero esto asegura que el body no se meta debajo */
+    .body {
+      padding-top: 1.5rem;
+    }
+  </style>
 </head>
-<body class="c-app">
 
-  <!-- Sidebar -->
-  {% block sidebar %}
-  <div class="c-sidebar c-sidebar-dark c-sidebar-fixed c-sidebar-lg-show" id="sidebar">
-    <div class="c-sidebar-brand">Barbería</div>
-    <ul class="c-sidebar-nav">
-      <li class="c-sidebar-nav-item">
-        <a class="c-sidebar-nav-link" href="/">Dashboard</a>
-      </li>
-      <li class="c-sidebar-nav-item">
-        <a class="c-sidebar-nav-link" href="/facturacion/crear/">Crear factura</a>
-      </li>
-      <li class="c-sidebar-nav-item">
-        <a class="c-sidebar-nav-link" href="/cortes/">Cortes</a>
-      </li>
-      <li class="c-sidebar-nav-item">
-        <a class="c-sidebar-nav-link" href="/clientes/">Clientes</a>
-      </li>
-      {% if request.user.rol == 'ADMIN' %}
-      <li class="c-sidebar-nav-item">
-        <a class="c-sidebar-nav-link text-danger" href="/admin/">Admin</a>
-      </li>
-      {% endif %}
-    </ul>
-  </div>
-  {% endblock %}
+<body>
+  {% include 'includes/sidebar.html' %}
 
-  <!-- Wrapper -->
-  <div class="c-wrapper">
+  <div class="wrapper d-flex flex-column min-vh-100 bg-light">
+    
+    {% include 'includes/navbar.html' %}
 
-    <!-- Navbar -->
-    <header class="c-header c-header-light c-header-fixed">
-      <button class="c-header-toggler c-class-toggler d-lg-none mfe-auto" type="button" data-target="#sidebar" data-class="c-sidebar-show">
-        <span class="c-header-toggler-icon"></span>
-      </button>
-      <a class="c-header-brand d-lg-none" href="#">Barbería</a>
+    <div class="body flex-grow-1 px-3">
+      <div class="container-lg">
+        {% block content %}{% endblock %}
+      </div>
+    </div>
 
-      <ul class="c-header-nav ms-auto">
-        <li class="c-header-nav-item dropdown">
-          <a class="c-header-nav-link" href="#" data-coreui-toggle="dropdown">
-            {{ request.user.username }}
-          </a>
-          <div class="dropdown-menu dropdown-menu-end pt-0">
-            <a class="dropdown-item" href="{% url 'logout' %}">Cerrar sesión</a>
-          </div>
-        </li>
-      </ul>
-    </header>
-
-    <!-- Main content -->
-    {% block content %}
-    {% endblock %}
-
-    <!-- Footer (opcional) -->
-    <footer class="c-footer">
-      <div>Barbery © 2026</div>
+    <footer class="footer">
+      <div>© 2024 Barbery.</div>
     </footer>
   </div>
 
-  <!-- CoreUI JS -->
-  <script src="{% static 'js/coreui.bundle.min.js' %}"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@coreui/coreui@5.4.3/dist/js/coreui.bundle.min.js" integrity="sha384-SWhFOmxmv1pfTLKVBW7q8uossvuaWNeQFdmaWi6xdldiUjyqG9F6V2R2BOC8gkxx" crossorigin="anonymous"></script>
-  <script src="{% static 'js/custom.js' %}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@coreui/coreui@5.4.3/dist/js/coreui.bundle.min.js"></script>
 </body>
 </html>

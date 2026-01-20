@@ -1,0 +1,17 @@
+<header class="header mb-4">
+  <div class="container-fluid">
+    <button class="header-toggler px-md-0" type="button"
+      onclick="coreui.Sidebar.getInstance(document.getElementById('sidebar')).toggle()">
+      ☰
+    </button>
+
+    <ul class="header-nav ms-auto">
+      <li class="nav-item">
+        <span class="nav-link">{{ request.user.username }}</span>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'logout' %}">Salir</a>
+      </li>
+    </ul>
+  </div>
+</header>

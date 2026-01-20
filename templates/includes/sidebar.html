@@ -1,0 +1,42 @@
+<aside class="sidebar sidebar-dark sidebar-fixed" id="sidebar">
+  <div class="sidebar-brand d-flex align-items-center justify-content-center">
+    💈 <strong class="ms-2">Barbery</strong>
+  </div>
+
+  <ul class="sidebar-nav" data-coreui="navigation">
+
+    <li class="nav-item">
+      <a class="nav-link" href="/">
+        <i class="cil-speedometer"></i> Dashboard
+      </a>
+    </li>
+
+    <li class="nav-title">Gestión</li>
+
+    <li class="nav-item">
+      <a class="nav-link" href="/clientes/">
+        <i class="cil-user"></i> Clientes
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'cortes_list' %}">
+        <i class="cil-cut"></i> Cortes
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link" href="/facturacion/crear/">
+        <i class="cil-file"></i> Facturación
+      </a>
+    </li>
+
+    {% if request.user.is_staff %}
+    <li class="nav-item mt-auto">
+      <a class="nav-link text-danger" href="/admin/">
+        <i class="cil-settings"></i> Admin
+      </a>
+    </li>
+    {% endif %}
+  </ul>
+</aside>
