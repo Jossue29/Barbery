@@ -1,79 +1,194 @@
-{% load static %}
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <title>Crear factura</title>
-  </head>
-  <body>
-    <div class="container py-4">
-      <h3>Crear factura</h3>
-      <div class="row">
-        <div class="col-md-4">
-          <label>Teléfono cliente</label>
-          <div class="input-group mb-2">
-            <input id="telefono" class="form-control" />
-            <button id="buscar" class="btn btn-outline-primary">Buscar</button>
-          </div>
-          <div id="cliente_info" class="mb-2"></div>
-          <button id="nuevo_cliente_btn" class="btn btn-sm btn-link" data-bs-toggle="modal" data-bs-target="#modalCliente">Crear cliente</button>
-          <div class="mb-2">
-            <label>Barbero</label>
-            <select id="barbero" class="form-select">
-              {% for b in barberos %}
-              <option value="{{ b.id }}">{{ b.get_full_name }} ({{ b.username }})</option>
+{% extends 'base.html' %}
+{% block title %}Nueva Factura{% endblock %}
+
+{% block content %}
+<form method="post">
+{% csrf_token %}
+
+<div class="row">
+
+  <!-- CLIENTE -->
+  <div class="col-md-4">
+    <div class="card mb-4">
+      <div class="card-header fw-bold">Cliente</div>
+
+      <div class="card-body">
+
+        <div class="mb-3">
+          <label>Teléfono</label>
+          <input type="text"
+                 id="telefono"
+                 name="telefono"
+                 class="form-control"
+                 onchange="buscarCliente()"
+                 required>
+        </div>
+
+        <div class="mb-3">
+          <label>Nombre completo</label>
+          <input type="text"
+                 id="nombre"
+                 name="nombre"
+                 class="form-control"
+                 required>
+        </div>
+
+        <input type="hidden" name="cliente_id" id="cliente_id">
+
+        <button type="button"
+                class="btn btn-success w-100"
+                onclick="guardarCliente()">
+          Usar / Guardar cliente
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- DETALLE -->
+  <div class="col-md-8">
+    <div class="card mb-4">
+      <div class="card-header fw-bold">Detalle de cortes</div>
+
+      <div class="card-body">
+
+        <div class="row mb-3">
+          <div class="col-md-5">
+            <select id="corte" class="form-select">
+              <option value="">Seleccione corte</option>
+              {% for c in cortes %}
+              <option value="{{ c.id }}" data-precio="{{ c.precio }}">
+                {{ c.nombre_corte }} - C$ {{ c.precio }}
+              </option>
               {% endfor %}
             </select>
           </div>
-        </div>
-        <div class="col-md-8">
-          <table class="table table-sm" id="detalle">
-            <thead><tr><th>Corte</th><th>Precio</th><th>Cant</th><th>Subtotal</th><th></th></tr></thead>
-            <tbody></tbody>
-          </table>
-          <div class="d-flex justify-content-between">
-            <div>
-              <select id="select_corte" class="form-select form-select-sm">
-                {% for c in cortes %}
-                <option value="{{ c.id }}" data-precio="{{ c.precio }}">{{ c.nombre_corte }} - {{ c.precio }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div>
-              <button id="add_item" class="btn btn-sm btn-success">Agregar</button>
-            </div>
-          </div>
-          <div class="mt-2 text-end">
-            <strong>Total: </strong><span id="total">0.00</span>
-          </div>
-          <div class="mt-3">
-            <button id="generar" class="btn btn-primary">Generar factura</button>
-          </div>
-        </div>
-      </div>
 
-      <!-- Modal cliente -->
-      <div class="modal fade" id="modalCliente" tabindex="-1">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title">Crear cliente</h5></div>
-            <div class="modal-body">
-              <div class="mb-2"><input id="cli_nombre" class="form-control" placeholder="Nombre"></div>
-              <div class="mb-2"><input id="cli_telefono" class="form-control" placeholder="Teléfono"></div>
-            </div>
-            <div class="modal-footer">
-              <button id="crear_cliente" class="btn btn-primary">Crear</button>
-            </div>
+          <div class="col-md-2">
+            <input type="number" id="cantidad" class="form-control" value="1" min="1">
+          </div>
+
+          <div class="col-md-3">
+            <button type="button"
+                    class="btn btn-primary w-100"
+                    onclick="agregar()">
+              Agregar
+            </button>
           </div>
         </div>
-      </div>
 
+        <table class="table table-bordered align-middle">
+          <thead>
+            <tr>
+              <th>Corte</th>
+              <th>Precio</th>
+              <th>Cant.</th>
+              <th>Subtotal</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="detalle"></tbody>
+        </table>
+
+        <h4 class="text-end">
+          Total: C$ <span id="total">0.00</span>
+        </h4>
+
+        <input type="hidden" name="total_factura" id="total_factura">
+
+      </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/static/js/factura.js"></script>
-  </body>
-</html>
+    <button class="btn btn-success w-100">
+      Guardar Factura
+    </button>
+
+  </div>
+
+</div>
+</form>
+
+<script>
+function recalcularTotal() {
+  let total = 0;
+
+  document.querySelectorAll('#detalle tr').forEach(row => {
+    total += parseFloat(row.dataset.subtotal);
+  });
+
+  document.getElementById('total').innerText = total.toFixed(2);
+  document.getElementById('total_factura').value = total.toFixed(2);
+}
+
+function agregar() {
+  const select = document.getElementById('corte');
+  const option = select.options[select.selectedIndex];
+  if (!option.value) return;
+
+  const precio = parseFloat(option.dataset.precio);
+  const cantidad = parseInt(document.getElementById('cantidad').value);
+  const subtotal = precio * cantidad;
+
+  const fila = document.createElement('tr');
+  fila.dataset.subtotal = subtotal;
+
+  fila.innerHTML = `
+    <td>${option.text}</td>
+    <td>${precio.toFixed(2)}</td>
+    <td>${cantidad}</td>
+    <td>${subtotal.toFixed(2)}</td>
+    <td>
+      <button type="button"
+              class="btn btn-sm btn-danger"
+              onclick="this.closest('tr').remove(); recalcularTotal();">
+        X
+      </button>
+    </td>
+
+    <input type="hidden" name="corte_id[]" value="${option.value}">
+    <input type="hidden" name="precio[]" value="${precio}">
+    <input type="hidden" name="cantidad[]" value="${cantidad}">
+    <input type="hidden" name="subtotal[]" value="${subtotal}">
+  `;
+
+  document.getElementById('detalle').appendChild(fila);
+  recalcularTotal();
+}
+
+function buscarCliente() {
+  const telefono = document.getElementById('telefono').value;
+
+  fetch(`/clientes/ajax/buscar/?telefono=${telefono}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.encontrado) {
+        document.getElementById('nombre').value = data.nombre;
+        document.getElementById('cliente_id').value = data.id;
+      } else {
+        document.getElementById('nombre').value = '';
+        document.getElementById('cliente_id').value = '';
+      }
+    });
+}
+
+function guardarCliente() {
+  const telefono = document.getElementById('telefono').value;
+  const nombre = document.getElementById('nombre').value;
+
+  fetch('/clientes/ajax/crear/', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: `telefono=${telefono}&nombre=${nombre}`
+  })
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById('cliente_id').value = data.id;
+    alert('Cliente listo ✔');
+  });
+}
+</script>
+
+{% endblock %}

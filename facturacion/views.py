@@ -8,6 +8,7 @@ from .models import Factura, DetalleFactura
 from django.contrib.auth import get_user_model
 from decimal import Decimal
 from users.decorators import role_required
+from django.shortcuts import render, redirect
 
 User = get_user_model()
 
@@ -59,3 +60,48 @@ def preview_ticket(request, factura_id):
 def historial(request):
     qs = Factura.objects.all().order_by('-fecha')
     return render(request, 'facturacion/historial.html', {'facturas': qs})
+
+def crear_factura(request):
+    cortes = Corte.objects.all()
+
+    if request.method == 'POST':
+        telefono = request.POST.get('telefono')
+        nombre = request.POST.get('nombre')
+
+        cliente, _ = Cliente.objects.get_or_create(
+            telefono=telefono,
+            defaults={'nombre': nombre}
+        )
+
+        factura = Factura.objects.create(
+            cliente=cliente,
+            cajero=request.user,
+            barbero=request.user,
+            total=0
+        )
+
+        total = Decimal('0.00')
+
+        ids = request.POST.getlist('corte_id[]')
+        precios = request.POST.getlist('precio[]')
+        cantidades = request.POST.getlist('cantidad[]')
+        subtotales = request.POST.getlist('subtotal[]')
+
+        for i in range(len(ids)):
+            DetalleFactura.objects.create(
+                factura=factura,
+                corte_id=ids[i],
+                precio=precios[i],
+                cantidad=cantidades[i],
+                subtotal=subtotales[i]
+            )
+            total += Decimal(subtotales[i])
+
+        factura.total = total
+        factura.save()
+
+        return redirect('factura_crear')
+
+    return render(request, 'facturacion/crear.html', {
+        'cortes': cortes
+    })

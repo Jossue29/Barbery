@@ -25,10 +25,54 @@ def api_search_cliente(request):
 
 @csrf_exempt
 @require_POST
+def crear_cliente_ajax(request):
+    if request.method == 'POST':
+        telefono = request.POST.get('telefono')
+        nombre = request.POST.get('nombre')
+
+        cliente, _ = Cliente.objects.get_or_create(
+            telefono=telefono,
+            defaults={'nombre': nombre}
+        )
+
+        return JsonResponse({
+            'id': cliente.id,
+            'telefono': cliente.telefono,
+            'nombre': cliente.nombre
+        })
+    
 def api_create_cliente(request):
-    nombre = request.POST.get('nombre')
-    telefono = request.POST.get('telefono')
-    if not nombre or not telefono:
-        return JsonResponse({'ok': False, 'error': 'missing'})
-    c, created = Cliente.objects.get_or_create(telefono=telefono, defaults={'nombre': nombre})
-    return JsonResponse({'ok': True, 'cliente': {'id': c.id, 'nombre': c.nombre, 'telefono': c.telefono}})
+    if request.method == 'POST':
+        telefono = request.POST.get('telefono')
+        nombre = request.POST.get('nombre')
+
+        if not telefono or not nombre:
+            return JsonResponse({'error': 'Datos incompletos'}, status=400)
+
+        cliente, created = Cliente.objects.get_or_create(
+            telefono=telefono,
+            defaults={'nombre': nombre}
+        )
+
+        return JsonResponse({
+            'id': cliente.id,
+            'nombre': cliente.nombre,
+            'created': created
+        })
+
+    return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+def buscar_cliente_ajax(request):
+    q = request.GET.get('q', '')
+    clientes = Cliente.objects.filter(nombre__icontains=q)[:10]
+
+    data = [
+        {
+            'id': c.id,
+            'nombre': c.nombre,
+            'telefono': c.telefono
+        }
+        for c in clientes
+    ]
+
+    return JsonResponse(data, safe=False)
