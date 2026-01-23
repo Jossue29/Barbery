@@ -31,6 +31,15 @@
       </a>
     </li>
 
+    {% if request.user.rol == 'ADMIN' %}
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'users' %}">
+        <i class="cil-people"></i> Usuarios
+      </a>
+    </li>
+    {% endif %}
+
+
     {% if request.user.is_staff %}
     <li class="nav-item mt-auto">
       <a class="nav-link text-danger" href="/admin/">

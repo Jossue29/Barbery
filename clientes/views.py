@@ -26,53 +26,44 @@ def api_search_cliente(request):
 @csrf_exempt
 @require_POST
 def crear_cliente_ajax(request):
-    if request.method == 'POST':
-        telefono = request.POST.get('telefono')
-        nombre = request.POST.get('nombre')
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
 
-        cliente, _ = Cliente.objects.get_or_create(
-            telefono=telefono,
-            defaults={'nombre': nombre}
-        )
+    telefono = request.POST.get('telefono')
+    nombre = request.POST.get('nombre')
 
-        return JsonResponse({
-            'id': cliente.id,
-            'telefono': cliente.telefono,
-            'nombre': cliente.nombre
-        })
-    
-def api_create_cliente(request):
-    if request.method == 'POST':
-        telefono = request.POST.get('telefono')
-        nombre = request.POST.get('nombre')
+    if not telefono or not nombre:
+        return JsonResponse({'error': 'Datos incompletos'}, status=400)
 
-        if not telefono or not nombre:
-            return JsonResponse({'error': 'Datos incompletos'}, status=400)
+    telefono = telefono.strip().replace(" ", "")
 
-        cliente, created = Cliente.objects.get_or_create(
-            telefono=telefono,
-            defaults={'nombre': nombre}
-        )
+    cliente, created = Cliente.objects.get_or_create(
+        telefono=telefono,
+        defaults={'nombre': nombre}
+    )
 
-        return JsonResponse({
-            'id': cliente.id,
-            'nombre': cliente.nombre,
-            'created': created
-        })
-
-    return JsonResponse({'error': 'Método no permitido'}, status=405)
+    return JsonResponse({
+        'id': cliente.id,
+        'telefono': cliente.telefono,
+        'nombre': cliente.nombre,
+        'created': created,  # 👈 clave
+        'message': 'Cliente creado' if created else 'Cliente ya existe'
+    })
 
 def buscar_cliente_ajax(request):
-    q = request.GET.get('q', '')
-    clientes = Cliente.objects.filter(nombre__icontains=q)[:10]
+    telefono = request.GET.get('telefono', '').replace(' ', '')  # usa 'telefono'
+    
+    # solo buscamos si tiene exactamente 8 dígitos
+    if len(telefono) != 8:
+        return JsonResponse({'exists': False})
 
-    data = [
-        {
-            'id': c.id,
-            'nombre': c.nombre,
-            'telefono': c.telefono
-        }
-        for c in clientes
-    ]
-
-    return JsonResponse(data, safe=False)
+    try:
+        cliente = Cliente.objects.get(telefono=telefono)
+        return JsonResponse({
+            'exists': True,
+            'id': cliente.id,
+            'nombre': cliente.nombre,
+            'telefono': cliente.telefono
+        })
+    except Cliente.DoesNotExist:
+        return JsonResponse({'exists': False})

@@ -45,6 +45,7 @@
     </div>
   </div>
 
+
   <!-- DETALLE -->
   <div class="col-md-8">
     <div class="card mb-4">
@@ -120,6 +121,130 @@ function recalcularTotal() {
   document.getElementById('total_factura').value = total.toFixed(2);
 }
 
+document.addEventListener('DOMContentLoaded', function() {
+
+  function buscarCliente() {
+    const telefono = document.querySelector('#telefono').value.trim();
+    if (telefono.length !== 8) return; // solo buscar si tiene 8 dígitos
+
+    fetch(`/clientes/ajax/buscar/?telefono=${telefono}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.length > 0) {
+                // auto-rellenar nombre y hidden cliente_id
+                document.querySelector('#nombre').value = data[0].nombre;
+                document.querySelector('#cliente_id').value = data[0].id;
+            } else {
+                // limpiar campos si no existe
+                document.querySelector('#nombre').value = '';
+                document.querySelector('#cliente_id').value = '';
+            }
+        });
+}
+
+function buscarCliente() {
+    const telefono = document.querySelector('#telefono').value.trim();
+    if (telefono.length !== 8) return; // solo buscar si tiene 8 dígitos
+
+    fetch(`/clientes/ajax/buscar/?telefono=${telefono}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.length > 0) {
+                // auto-rellenar nombre y hidden cliente_id
+                document.querySelector('#nombre').value = data[0].nombre;
+                document.querySelector('#cliente_id').value = data[0].id;
+            } else {
+                // limpiar campos si no existe
+                document.querySelector('#nombre').value = '';
+                document.querySelector('#cliente_id').value = '';
+            }
+        });
+}
+
+function guardarCliente() {
+    const nombre = document.querySelector('#nombre').value.trim();
+    const telefono = document.querySelector('#telefono').value.trim();
+    let clienteId = document.querySelector('#cliente_id').value;
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    if (!nombre || !telefono) {
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'warning',
+            title: 'Debes llenar ambos campos',
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true
+        });
+        return;
+    }
+
+    fetch('/clientes/ajax/crear/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `nombre=${encodeURIComponent(nombre)}&telefono=${encodeURIComponent(telefono)}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'error',
+                title: data.error,
+                showConfirmButton: false,
+                timer: 2500,
+                timerProgressBar: true
+            });
+        } else {
+            // siempre actualizar hidden cliente_id y campos visibles
+            clienteId = data.id;
+            document.querySelector('#cliente_id').value = data.id;
+            document.querySelector('#nombre').value = data.nombre;
+            document.querySelector('#telefono').value = data.telefono;
+
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Cliente guardado y seleccionado',
+                showConfirmButton: false,
+                timer: 2000,
+                timerProgressBar: true
+            });
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'error',
+            title: 'Error al guardar el cliente',
+            showConfirmButton: false,
+            timer: 2500,
+            timerProgressBar: true
+        });
+    });
+}
+
+// asignar evento al botón
+document.addEventListener('DOMContentLoaded', function() {
+    const boton = document.querySelector('button[onclick="guardarCliente()"]');
+    if(boton) boton.addEventListener('click', guardarCliente);
+});
+
+
+  // asignar la función al botón
+  const boton = document.querySelector('button[onclick="guardarCliente()"]');
+  if(boton) boton.addEventListener('click', guardarCliente);
+
+});
+
 function agregar() {
   const select = document.getElementById('corte');
   const option = select.options[select.selectedIndex];
@@ -171,24 +296,28 @@ function buscarCliente() {
     });
 }
 
-function guardarCliente() {
-  const telefono = document.getElementById('telefono').value;
-  const nombre = document.getElementById('nombre').value;
+const inputTelefono = document.querySelector('#telefono');
+const inputNombre = document.querySelector('#nombre');
 
-  fetch('/clientes/ajax/crear/', {
-    method: 'POST',
-    headers: {
-      'X-CSRFToken': '{{ csrf_token }}',
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body: `telefono=${telefono}&nombre=${nombre}`
-  })
-  .then(res => res.json())
-  .then(data => {
-    document.getElementById('cliente_id').value = data.id;
-    alert('Cliente listo ✔');
-  });
-}
+inputTelefono.addEventListener('input', function() {
+    const telefono = this.value.replace(/\s/g, '');
+
+    if (telefono.length === 8) {  // solo cuando hay 8 dígitos
+        fetch(`/clientes/ajax/buscar/?telefono=${telefono}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.exists) {
+                    inputNombre.value = data.nombre;
+                } else {
+                    inputNombre.value = '';
+                }
+            });
+    } else {
+        inputNombre.value = '';
+    }
+});
+
+
 </script>
 
 {% endblock %}

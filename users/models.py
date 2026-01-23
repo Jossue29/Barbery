@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
-
 class User(AbstractUser):
     ROL_CHOICES = [
         ('ADMIN', 'Admin'),
@@ -17,5 +16,15 @@ class User(AbstractUser):
     direccion = models.TextField(blank=True)
     rol = models.CharField(max_length=20, choices=ROL_CHOICES, default='CAJERO')
 
+    def save(self, *args, **kwargs):
+        # Si es superuser, forzamos rol ADMIN
+        if self.is_superuser:
+            self.rol = 'ADMIN'
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.username} ({self.get_full_name()})"
+        # Mostramos username y nombre completo si hay
+        full_name = f"{self.nombre} {self.apellido}".strip()
+        if full_name:
+            return f"{self.username} ({full_name})"
+        return self.username
