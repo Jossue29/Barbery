@@ -7,11 +7,12 @@
 
 <div class="row">
 
-  <!-- CLIENTE -->
+  <!-- COLUMNA IZQUIERDA -->
   <div class="col-md-4">
+
+    <!-- CLIENTE -->
     <div class="card mb-4">
       <div class="card-header fw-bold">Cliente</div>
-
       <div class="card-body">
 
         <div class="mb-3">
@@ -20,7 +21,6 @@
                  id="telefono"
                  name="telefono"
                  class="form-control"
-                 onchange="buscarCliente()"
                  required>
         </div>
 
@@ -43,14 +43,34 @@
 
       </div>
     </div>
+
+    <!-- BARBERO / ESTILISTA -->
+    <div class="card mb-4">
+      <div class="card-header fw-bold">Barbero / Estilista</div>
+      <div class="card-body">
+
+        <div class="mb-3">
+          <label>Seleccionar</label>
+          <select name="barbero_id" class="form-select" required>
+            <option value="">-- Seleccione --</option>
+            {% for b in barberos %}
+              <option value="{{ b.id }}">
+                {{ b.nombre }} {{ b.apellido }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+      </div>
+    </div>
+
   </div>
 
-
-  <!-- DETALLE -->
+  <!-- COLUMNA DERECHA -->
   <div class="col-md-8">
+
     <div class="card mb-4">
       <div class="card-header fw-bold">Detalle de cortes</div>
-
       <div class="card-body">
 
         <div class="row mb-3">
@@ -58,15 +78,16 @@
             <select id="corte" class="form-select">
               <option value="">Seleccione corte</option>
               {% for c in cortes %}
-              <option value="{{ c.id }}" data-precio="{{ c.precio }}">
-                {{ c.nombre_corte }} - C$ {{ c.precio }}
-              </option>
+                <option value="{{ c.id }}" data-precio="{{ c.precio }}">
+                  {{ c.nombre_corte }} - C$ {{ c.precio }}
+                </option>
               {% endfor %}
             </select>
           </div>
 
           <div class="col-md-2">
-            <input type="number" id="cantidad" class="form-control" value="1" min="1">
+            <input type="number" id="cantidad"
+                   class="form-control" value="1" min="1">
           </div>
 
           <div class="col-md-3">
@@ -95,155 +116,115 @@
           Total: C$ <span id="total">0.00</span>
         </h4>
 
-        <input type="hidden" name="total_factura" id="total_factura">
+        <input type="hidden"
+               name="total_factura"
+               id="total_factura">
 
       </div>
     </div>
 
-    <button class="btn btn-success w-100">
+    <button type="button"
+            class="btn btn-success w-100"
+            data-coreui-toggle="modal"
+            data-coreui-target="#confirmGuardarModal">
       Guardar Factura
     </button>
 
   </div>
 
 </div>
+
 </form>
 
-<script>
+<div class="modal fade" id="confirmGuardarModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirmar</h5>
+        <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        ¿Está seguro de guardar esta factura e imprimir el recibo?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="confirmGuardarBtn">Sí, guardar e imprimir</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div id="toastMsg"
+       class="toast align-items-center text-bg-success border-0"
+       role="alert"
+       aria-live="assertive"
+       aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="toastBody">
+        ✔ Acción realizada correctamente
+      </div>
+      <button type="button"
+              class="btn-close btn-close-white me-2 m-auto"
+              data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+
+ <script>
+
+document.getElementById('confirmGuardarBtn').addEventListener('click', function() {
+  const form = document.querySelector('form');
+  const data = new FormData(form);
+  
+  fetch(form.action, {
+    method: 'POST',
+    body: data,
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(res => res.json())
+  .then(json => {
+    if (json.ok) {
+      // Cerramos el modal
+      const modalEl = document.getElementById('confirmGuardarModal');
+      const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+      modal.hide();
+
+
+      // Abrimos el recibo en nueva pestaña
+      window.open(`/facturacion/ticket/${json.factura_id}/`, '_blank');
+
+      // Limpiamos el form
+      window.location.reload();
+    } else {
+      showToast('Error al guardar la factura', 'danger');
+    }
+  });
+});
+
+function showToast(message, type = 'success') {
+  const toastEl = document.getElementById('toastMsg');
+  const toastBody = document.getElementById('toastBody');
+
+  toastEl.className = `toast align-items-center text-bg-${type} border-0`;
+  toastBody.innerText = message;
+
+  const toast = new bootstrap.Toast(toastEl, { delay: 2500 });
+  toast.show();
+}
+
 function recalcularTotal() {
   let total = 0;
-
   document.querySelectorAll('#detalle tr').forEach(row => {
     total += parseFloat(row.dataset.subtotal);
   });
-
   document.getElementById('total').innerText = total.toFixed(2);
   document.getElementById('total_factura').value = total.toFixed(2);
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-
-  function buscarCliente() {
-    const telefono = document.querySelector('#telefono').value.trim();
-    if (telefono.length !== 8) return; // solo buscar si tiene 8 dígitos
-
-    fetch(`/clientes/ajax/buscar/?telefono=${telefono}`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.length > 0) {
-                // auto-rellenar nombre y hidden cliente_id
-                document.querySelector('#nombre').value = data[0].nombre;
-                document.querySelector('#cliente_id').value = data[0].id;
-            } else {
-                // limpiar campos si no existe
-                document.querySelector('#nombre').value = '';
-                document.querySelector('#cliente_id').value = '';
-            }
-        });
-}
-
-function buscarCliente() {
-    const telefono = document.querySelector('#telefono').value.trim();
-    if (telefono.length !== 8) return; // solo buscar si tiene 8 dígitos
-
-    fetch(`/clientes/ajax/buscar/?telefono=${telefono}`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.length > 0) {
-                // auto-rellenar nombre y hidden cliente_id
-                document.querySelector('#nombre').value = data[0].nombre;
-                document.querySelector('#cliente_id').value = data[0].id;
-            } else {
-                // limpiar campos si no existe
-                document.querySelector('#nombre').value = '';
-                document.querySelector('#cliente_id').value = '';
-            }
-        });
-}
-
-function guardarCliente() {
-    const nombre = document.querySelector('#nombre').value.trim();
-    const telefono = document.querySelector('#telefono').value.trim();
-    let clienteId = document.querySelector('#cliente_id').value;
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-    if (!nombre || !telefono) {
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'warning',
-            title: 'Debes llenar ambos campos',
-            showConfirmButton: false,
-            timer: 2000,
-            timerProgressBar: true
-        });
-        return;
-    }
-
-    fetch('/clientes/ajax/crear/', {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': csrfToken,
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `nombre=${encodeURIComponent(nombre)}&telefono=${encodeURIComponent(telefono)}`
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.error) {
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: 'error',
-                title: data.error,
-                showConfirmButton: false,
-                timer: 2500,
-                timerProgressBar: true
-            });
-        } else {
-            // siempre actualizar hidden cliente_id y campos visibles
-            clienteId = data.id;
-            document.querySelector('#cliente_id').value = data.id;
-            document.querySelector('#nombre').value = data.nombre;
-            document.querySelector('#telefono').value = data.telefono;
-
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: 'success',
-                title: 'Cliente guardado y seleccionado',
-                showConfirmButton: false,
-                timer: 2000,
-                timerProgressBar: true
-            });
-        }
-    })
-    .catch(err => {
-        console.error(err);
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'error',
-            title: 'Error al guardar el cliente',
-            showConfirmButton: false,
-            timer: 2500,
-            timerProgressBar: true
-        });
-    });
-}
-
-// asignar evento al botón
-document.addEventListener('DOMContentLoaded', function() {
-    const boton = document.querySelector('button[onclick="guardarCliente()"]');
-    if(boton) boton.addEventListener('click', guardarCliente);
-});
-
-
-  // asignar la función al botón
-  const boton = document.querySelector('button[onclick="guardarCliente()"]');
-  if(boton) boton.addEventListener('click', guardarCliente);
-
-});
 
 function agregar() {
   const select = document.getElementById('corte');
@@ -280,44 +261,79 @@ function agregar() {
   recalcularTotal();
 }
 
-function buscarCliente() {
-  const telefono = document.getElementById('telefono').value;
+function guardarCliente() {
+  const nombre = nombreInput.value.trim();
+  const telefono = telefonoInput.value.trim();
+  const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-  fetch(`/clientes/ajax/buscar/?telefono=${telefono}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.encontrado) {
-        document.getElementById('nombre').value = data.nombre;
-        document.getElementById('cliente_id').value = data.id;
-      } else {
-        document.getElementById('nombre').value = '';
-        document.getElementById('cliente_id').value = '';
-      }
-    });
+  if (!nombre || !telefono) return;
+
+  fetch('/clientes/ajax/crear/', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrf,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: `nombre=${nombre}&telefono=${telefono}`
+  })
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById('cliente_id').value = data.id;
+    showToast('Cliente guardado correctamente 🧾');
+  });
 }
 
-const inputTelefono = document.querySelector('#telefono');
-const inputNombre = document.querySelector('#nombre');
+const telefonoInput = document.getElementById('telefono');
+const nombreInput = document.getElementById('nombre');
 
-inputTelefono.addEventListener('input', function() {
-    const telefono = this.value.replace(/\s/g, '');
+telefonoInput.addEventListener('input', () => {
+  const tel = telefonoInput.value;
+  if (tel.length !== 8) return;
 
-    if (telefono.length === 8) {  // solo cuando hay 8 dígitos
-        fetch(`/clientes/ajax/buscar/?telefono=${telefono}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.exists) {
-                    inputNombre.value = data.nombre;
-                } else {
-                    inputNombre.value = '';
-                }
-            });
-    } else {
-        inputNombre.value = '';
-    }
+  fetch(`/clientes/ajax/buscar/?telefono=${tel}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.exists) {
+        nombreInput.value = data.nombre;
+        document.getElementById('cliente_id').value = data.id;
+        showToast('Cliente encontrado ✅', 'info');
+      } else {
+        nombreInput.value = '';
+        document.getElementById('cliente_id').value = '';
+        showToast('Cliente nuevo 🆕', 'warning');
+      }
+    });
 });
 
+function confirmarGuardarFactura() {
+  if (!confirm('¿Está seguro de guardar esta factura?')) return;
+
+  const form = document.querySelector('form');
+
+  // Cambiamos temporalmente la acción del form para redirigir al recibo
+  form.addEventListener('submit', function(e) {
+    e.preventDefault(); // prevenimos submit normal
+    const data = new FormData(form);
+
+    fetch(form.action, {
+      method: 'POST',
+      body: data,
+    })
+    .then(response => response.json()) // ojo, debemos cambiar la vista para que devuelva JSON
+    .then(json => {
+      if (json.ok) {
+        // Abrimos la vista del recibo en nueva ventana
+        window.open(`/facturacion/ticket/${json.factura_id}/`, '_blank');
+        // recargamos la página de crear factura
+        window.location.reload();
+      } else {
+        showToast('Error al guardar la factura', 'danger');
+      }
+    });
+  }, { once: true });
+
+  form.submit(); // disparar el submit
+}
 
 </script>
-
 {% endblock %}
