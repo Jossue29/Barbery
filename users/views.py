@@ -7,31 +7,38 @@ from .decorators import role_required
 
 User = get_user_model()
 
-
 @login_required
 @role_required(['ADMIN'])
-def users_view(request, pk=None):
-    # ===== LISTADO CON PAGINADO =====
-    qs = User.objects.all().order_by('username')
-    paginator = Paginator(qs, 10)  # 10 usuarios por página
+def users_view(request):
+    users_qs = User.objects.all().order_by('username')
+    paginator = Paginator(users_qs, 10)
     page_number = request.GET.get('page')
-    users_page = paginator.get_page(page_number)
+    users = paginator.get_page(page_number)
 
-    # ===== FORM CREATE / UPDATE =====
-    if pk:
-        instance = get_object_or_404(User, pk=pk)
-        form = UserUpdateForm(request.POST or None, instance=instance)
-        title = 'Editar usuario'
-    else:
-        form = UserCreateForm(request.POST or None)
-        title = 'Crear usuario'
+    create_form = UserCreateForm(request.POST or None, prefix='create')
 
-    if request.method == 'POST' and form.is_valid():
-        form.save()
-        return redirect('users')
+    if request.method == 'POST':
+        if 'create-submit' in request.POST:
+            if create_form.is_valid():
+                create_form.save()
+                return redirect('users')
 
-    return render(request, 'users/list.html', {
-        'users': users_page,
-        'form': form,
-        'title': title,
-    })
+        # Manejo de edición (buscar cuál formulario se envió)
+        for user in users:
+            prefix = f'edit-{user.id}'
+            if f'edit-submit-{user.id}' in request.POST:
+                edit_form = UserUpdateForm(request.POST, instance=user, prefix=prefix)
+                if edit_form.is_valid():
+                    edit_form.save()
+                    return redirect('users')
+
+    # Para GET (y para mostrar forms limpios en modales)
+    for user in users:
+        user.edit_form = UserUpdateForm(instance=user, prefix=f'edit-{user.id}')
+
+    context = {
+        'users': users,
+        'create_form': create_form,
+    }
+
+    return render(request, 'users/list.html', context)
