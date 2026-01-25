@@ -66,85 +66,185 @@
 </div>
 
 <!-- Modal Crear -->
+<!-- Modal Crear -->
 <div class="modal fade" id="createUserModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content shadow">
+
       <form method="post" action="{% url 'users' %}">
         {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title">Crear usuario</h5>
-          <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
+
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-semibold">
+            <i class="cil-user-plus me-2"></i> Crear usuario
+          </h5>
+          <button type="button"
+                  class="btn-close"
+                  data-coreui-dismiss="modal"
+                  aria-label="Close"></button>
         </div>
-        <div class="modal-body row g-3">
-          <div class="col-md-6">
-            <label class="form-label">{{ create_form.username.label }}</label>
-            {{ create_form.username }}
+
+        <div class="modal-body">
+          <div class="row g-3">
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">{{ create_form.username.label }}</label>
+              {{ create_form.username }}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">{{ create_form.rol.label }}</label>
+              {{ create_form.rol }}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">{{ create_form.nombre.label }}</label>
+              {{ create_form.nombre }}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">{{ create_form.apellido.label }}</label>
+              {{ create_form.apellido }}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">{{ create_form.telefono.label }}</label>
+              {{ create_form.telefono }}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">{{ create_form.password1.label }}</label>
+              {{ create_form.password1 }}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">{{ create_form.password2.label }}</label>
+              {{ create_form.password2 }}
+            </div>
+
           </div>
-          <div class="col-md-6">
-            <label class="form-label">{{ create_form.rol.label }}</label>
-            {{ create_form.rol }}
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">{{ create_form.nombre.label }}</label>
-            {{ create_form.nombre }}
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">{{ create_form.apellido.label }}</label>
-            {{ create_form.apellido }}
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">{{ create_form.telefono.label }}</label>
-            {{ create_form.telefono }}
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">{{ create_form.password1.label }}</label>
-            {{ create_form.password1 }}
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">{{ create_form.password2.label }}</label>
-            {{ create_form.password2 }}
-          </div>
-          <!-- Agrega los demás campos que necesites: identidad, direccion, email -->
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-success">Guardar</button>
+
+        <div class="modal-footer bg-light">
+          <button type="button"
+                  class="btn btn-outline-secondary"
+                  data-coreui-dismiss="modal">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn-success">
+            <i class="cil-save me-1"></i> Guardar
+          </button>
         </div>
+
       </form>
     </div>
   </div>
 </div>
 
+
 <!-- Modales Editar -->
-{% for u in users %}
-<div class="modal fade" id="editUserModal{{ u.id }}" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
+ {% for u in users %}
+<div class="modal fade" id="editUserModal{{ u.id }}" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content shadow-sm">
+
       <form method="post" action="{% url 'users' %}">
         {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title">Editar {{ u.username }}</h5>
-          <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
+
+        <!-- HEADER -->
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title fw-semibold">
+            Editar usuario
+            <small class="text-muted">— {{ u.username }}</small>
+          </h5>
+          <button type="button"
+                  class="btn-close"
+                  data-coreui-dismiss="modal"></button>
         </div>
-        <div class="modal-body row g-3">
-          {% for field in u.edit_form %}
+
+        <!-- BODY -->
+        <div class="modal-body">
+
+          <!-- DATOS PERSONALES -->
+          <h6 class="text-uppercase text-muted mb-3">Datos personales</h6>
+          <div class="row g-4 mb-4">
+
             <div class="col-md-6">
-              <label class="form-label">{{ field.label }}</label>
-              {{ field }}
-              {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-              {% if field.errors %}<div class="invalid-feedback d-block">{{ field.errors|join:", " }}</div>{% endif %}
+              <label class="form-label">Usuario</label>
+              {{ u.edit_form.username }}
             </div>
-          {% endfor %}
+
+            <div class="col-md-6">
+              <label class="form-label">Rol</label>
+              {{ u.edit_form.rol }}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Nombre</label>
+              {{ u.edit_form.nombre }}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Apellido</label>
+              {{ u.edit_form.apellido }}
+            </div>
+
+          </div>
+
+          <!-- CONTACTO -->
+          <h6 class="text-uppercase text-muted mb-3">Contacto</h6>
+          <div class="row g-4 mb-4">
+
+            <div class="col-md-6">
+              <label class="form-label">Teléfono</label>
+              {{ u.edit_form.telefono }}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Correo electrónico</label>
+              {{ u.edit_form.email }}
+            </div>
+
+          </div>
+
+          <!-- INFORMACIÓN ADICIONAL -->
+          <h6 class="text-uppercase text-muted mb-3">Información adicional</h6>
+          <div class="row g-4">
+
+            <div class="col-md-6">
+              <label class="form-label">Identidad</label>
+              {{ u.edit_form.identidad }}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Dirección</label>
+              {{ u.edit_form.direccion }}
+            </div>
+
+          </div>
+
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancelar</button>
-          <button type="submit" name="edit-submit-{{ u.id }}" class="btn btn-primary">Guardar cambios</button>
+
+        <!-- FOOTER -->
+        <div class="modal-footer border-top">
+          <button type="button"
+                  class="btn btn-outline-secondary"
+                  data-coreui-dismiss="modal">
+            Cancelar
+          </button>
+          <button type="submit"
+                  name="edit-submit-{{ u.id }}"
+                  class="btn btn-primary">
+            Guardar cambios
+          </button>
         </div>
+
       </form>
     </div>
   </div>
 </div>
 {% endfor %}
+
 
 {% endblock %}
 
