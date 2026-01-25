@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from decimal import Decimal
 from django.http import JsonResponse
-
+from django.views.decorators.http import require_POST
 from clientes.models import Cliente
 from cortes.models import Corte
 from .models import Factura, DetalleFactura
@@ -159,3 +159,75 @@ def preview_ticket(request, factura_id):
         'detalles': detalles,
         'qr_base64': qr_base64,
     })
+
+from django.views.decorators.http import require_POST
+
+@login_required
+@role_required(['BARBERO', 'ESTILISTA'])
+def cobro(request):
+    return render(request, 'facturacion/cobro.html')
+
+
+@login_required
+def ajax_cargar_factura(request):
+    codigo = request.GET.get('codigo')
+
+    if not codigo:
+        return JsonResponse({'ok': False, 'msg': 'Código requerido'})
+
+    try:
+        factura = Factura.objects.get(codigo_factura=codigo)
+    except Factura.DoesNotExist:
+        return JsonResponse({'ok': False, 'msg': 'Factura no existe'})
+
+    # Validar que sea el mismo barbero
+    if factura.barbero != request.user:
+        return JsonResponse({'ok': False, 'msg': 'No puedes cobrar esta factura'})
+
+    # Validar que no esté cobrada
+    if hasattr(factura, 'cobro'):
+        return JsonResponse({'ok': False, 'msg': 'Esta factura ya fue cobrada'})
+
+    detalles = []
+    for d in factura.detalles.all():
+        detalles.append({
+            'corte': d.corte.corte_nombre,
+            'precio': float(d.precio),
+            'cantidad': d.cantidad,
+            'subtotal': float(d.subtotal),
+        })
+
+    return JsonResponse({
+        'ok': True,
+        'factura': {
+            'codigo': factura.codigo_factura,
+            'cliente': factura.cliente.nombre,
+            'fecha': factura.fecha.strftime('%d/%m/%Y %H:%M'),
+            'total': float(factura.total),
+            'comision': float(factura.total * 0.5),
+            'detalles': detalles
+        }
+    })
+
+@login_required
+@require_POST
+@role_required(['BARBERO', 'ESTILISTA'])
+def ajax_cobrar_factura(request):
+    codigo = request.POST.get('codigo')
+    try:
+        factura = Factura.objects.get(codigo=codigo)
+    except Factura.DoesNotExist:
+        return JsonResponse({'ok': False, 'msg': 'Factura no existe'})
+
+    # Validar barbero
+    if factura.barbero != request.user:
+        return JsonResponse({'ok': False, 'msg': 'No puedes cobrar esta factura'})
+
+    # Validar cobro duplicado
+    if hasattr(factura, 'cobro'):
+        return JsonResponse({'ok': False, 'msg': 'Factura ya cobrada'})
+
+    comision = factura.total * Decimal('0.5')
+    Cobro.objects.create(barbero=request.user, factura=factura, monto=comision)
+
+    return JsonResponse({'ok': True, 'msg': f'Cobro realizado: C$ {comision:.2f}'})

@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Cobro{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Cobro de Factura</h2>
+
+  <div class="mb-3">
+    <label>Ingrese código de factura</label>
+    <input type="text" id="codigoFactura" class="form-control" maxlength="12">
+    <button class="btn btn-primary mt-2" onclick="cargarFactura()">Buscar</button>
+  </div>
+
+  <div id="detalleFactura" style="display:none;">
+    <h4>Factura: <span id="facturaCodigo"></span></h4>
+    <p>Cliente: <span id="facturaCliente"></span></p>
+    <p>Fecha: <span id="facturaFecha"></span></p>
+
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Corte</th>
+          <th>Precio</th>
+          <th>Cant.</th>
+          <th>Subtotal</th>
+        </tr>
+      </thead>
+      <tbody id="detalleBody"></tbody>
+    </table>
+
+    <h5>Total: C$ <span id="facturaTotal"></span></h5>
+    <h5>Comisión 50%: C$ <span id="facturaComision"></span></h5>
+
+    <button class="btn btn-success" onclick="cobrarFactura()">Cobrar</button>
+  </div>
+</div>
+
+<script>
+function cargarFactura() {
+    const codigo = document.getElementById('codigoFactura').value.trim();
+    if (!codigo) return alert('Ingrese un código');
+
+    fetch(`/facturacion/ajax/factura/?codigo=${codigo}`)
+        .then(res => res.json())
+        .then(data => {
+            if (!data.ok) return alert(data.msg);
+
+            const f = data.factura;
+            document.getElementById('facturaCodigo').innerText = f.codigo;
+            document.getElementById('facturaCliente').innerText = f.cliente;
+            document.getElementById('facturaFecha').innerText = f.fecha;
+            document.getElementById('facturaTotal').innerText = f.total.toFixed(2);
+            document.getElementById('facturaComision').innerText = f.comision.toFixed(2);
+
+            const tbody = document.getElementById('detalleBody');
+            tbody.innerHTML = '';
+            f.detalles.forEach(d => {
+                tbody.innerHTML += `<tr>
+                    <td>${d.corte}</td>
+                    <td>${d.precio.toFixed(2)}</td>
+                    <td>${d.cantidad}</td>
+                    <td>${d.subtotal.toFixed(2)}</td>
+                </tr>`;
+            });
+
+            document.getElementById('detalleFactura').style.display = 'block';
+        });
+}
+
+function cobrarFactura() {
+    const codigo = document.getElementById('facturaCodigo').innerText;
+    if (!confirm('¿Confirmar cobro?')) return;
+
+    fetch(`/facturacion/ajax/cobrar/`, {
+        method: 'POST',
+        headers: {'X-CSRFToken': '{{ csrf_token }}'},
+        body: new URLSearchParams({'codigo': codigo})
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.ok) return alert(data.msg);
+        alert(data.msg);
+        location.reload();
+    });
+}
+</script>
+{% endblock %}

@@ -31,3 +31,12 @@ class DetalleFactura(models.Model):
 
     def __str__(self):
         return f"{self.corte} x{self.cantidad} -> {self.subtotal}"
+
+class Cobro(models.Model):
+    barbero = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    factura = models.OneToOneField('Factura', on_delete=models.CASCADE)
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.barbero.get_full_name() or self.barbero.username} - {self.factura.codigo_factura} - C$ {self.monto}"

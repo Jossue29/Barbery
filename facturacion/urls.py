@@ -6,4 +6,10 @@ urlpatterns = [
     path('crear/', views.crear_factura, name='factura_crear'),
     path('api/create/', views.api_create_factura, name='api_create_factura'),
     path('ticket/<int:factura_id>/', views.preview_ticket, name='preview_ticket'),
+
+    #----- cobro ------
+
+    path('cobro/', views.cobro, name='cobro'),
+    path('ajax/factura/', views.ajax_cargar_factura, name='ajax_cargar_factura'),
+    path('ajax/cobrar/', views.ajax_cobrar_factura, name='ajax_cobrar_factura'),
 ]

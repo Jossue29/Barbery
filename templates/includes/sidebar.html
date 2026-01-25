@@ -39,6 +39,15 @@
     </li>
     {% endif %}
 
+      <!-- Cobro (solo barbero/estilista) -->
+    {% if user.rol in 'BARBERO ESTILISTA' %}
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'cobro' %}">
+        <i class="cil-dollar"></i> Cobro
+      </a>
+    </li>
+    {% endif %}
+
 
     {% if request.user.is_staff %}
     <li class="nav-item mt-auto">

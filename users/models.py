@@ -8,6 +8,7 @@ class User(AbstractUser):
         ('BARBERO', 'Barbero'),
         ('ESTILISTA', 'Estilista'),
     ]
+    pass
 
     nombre = models.CharField(max_length=150, blank=True)
     apellido = models.CharField(max_length=150, blank=True)
