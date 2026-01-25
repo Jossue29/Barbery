@@ -9,6 +9,7 @@ from django.views.decorators.http import require_POST
 from clientes.models import Cliente
 from cortes.models import Corte
 from .models import Factura, DetalleFactura
+from .models import Factura, DetalleFactura, Cobro
 from users.decorators import role_required
 # views.py
 import qrcode
@@ -191,7 +192,7 @@ def ajax_cargar_factura(request):
     detalles = []
     for d in factura.detalles.all():
         detalles.append({
-            'corte': d.corte.corte_nombre,
+            'corte': d.corte.nombre_corte,
             'precio': float(d.precio),
             'cantidad': d.cantidad,
             'subtotal': float(d.subtotal),
@@ -204,7 +205,7 @@ def ajax_cargar_factura(request):
             'cliente': factura.cliente.nombre,
             'fecha': factura.fecha.strftime('%d/%m/%Y %H:%M'),
             'total': float(factura.total),
-            'comision': float(factura.total * 0.5),
+            'comision': float(factura.total * Decimal('0.5')),
             'detalles': detalles
         }
     })
@@ -215,7 +216,7 @@ def ajax_cargar_factura(request):
 def ajax_cobrar_factura(request):
     codigo = request.POST.get('codigo')
     try:
-        factura = Factura.objects.get(codigo=codigo)
+        factura = Factura.objects.get(codigo_factura=codigo)
     except Factura.DoesNotExist:
         return JsonResponse({'ok': False, 'msg': 'Factura no existe'})
 
