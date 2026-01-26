@@ -11,6 +11,8 @@ from cortes.models import Corte
 from .models import Factura, DetalleFactura
 from .models import Factura, DetalleFactura, Cobro
 from users.decorators import role_required
+from django.db.models import Sum
+from datetime import datetime, timedelta
 # views.py
 import qrcode
 from io import BytesIO
@@ -259,3 +261,49 @@ def ajax_mis_cobros(request):
 
     return JsonResponse({'ok': True, 'cobros': data, 'total': total})
 
+@login_required
+@role_required(['ADMIN', 'CAJERO'])
+def historial_facturas(request):
+    # Filtro por día o semana
+    filtro = request.GET.get('filtro', 'hoy')
+    now = datetime.now()
+
+    if filtro == 'hoy':
+        inicio = datetime(now.year, now.month, now.day)
+        fin = inicio + timedelta(days=1)
+    elif filtro == 'semana':
+        inicio = now - timedelta(days=now.weekday())  # lunes
+        inicio = datetime(inicio.year, inicio.month, inicio.day)
+        fin = inicio + timedelta(days=7)
+    else:
+        inicio = None
+        fin = None
+
+    facturas = Factura.objects.all().order_by('-fecha')
+    if inicio and fin:
+        facturas = facturas.filter(fecha__gte=inicio, fecha__lt=fin)
+
+    # Crear lista de facturas con comisión por fila
+    facturas_list = []
+    total_facturado = 0
+    total_comision_negocio = 0
+
+    for f in facturas:
+        comision = f.total * Decimal('0.5')
+        facturas_list.append({
+            'codigo': f.codigo_factura,
+            'cliente': f.cliente.nombre,
+            'barbero': f"{f.barbero.nombre} {f.barbero.apellido}",
+            'fecha': f.fecha,
+            'total': f.total,
+            'comision_negocio': comision
+        })
+        total_facturado += f.total
+        total_comision_negocio += comision
+
+    return render(request, 'facturacion/historial.html', {
+        'facturas': facturas_list,
+        'total_facturado': total_facturado,
+        'total_comision_negocio': total_comision_negocio,
+        'filtro': filtro,
+    })

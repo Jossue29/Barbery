@@ -30,6 +30,13 @@
         <i class="cil-file"></i> Facturación
       </a>
     </li>
+    {% if user.rol in 'ADMIN CAJERO' %}
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'historial_facturas' %}">
+        <i class="cil-file"></i> Historial de Facturas
+      </a>
+    </li>
+    {% endif %}
 
     {% if request.user.rol == 'ADMIN' %}
     <li class="nav-item">

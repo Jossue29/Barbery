@@ -1,29 +1,46 @@
-{% load static %}
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <title>Historial</title>
-  </head>
-  <body>
-    <div class="container py-4">
-      <h3>Historial de facturas</h3>
-      <table class="table">
-        <thead><tr><th>Código</th><th>Cliente</th><th>Total</th><th>Fecha</th><th></th></tr></thead>
-        <tbody>
-          {% for f in facturas %}
-          <tr>
-            <td>{{ f.codigo_factura }}</td>
-            <td>{{ f.cliente.nombre }}</td>
-            <td>{{ f.total }}</td>
-            <td>{{ f.fecha }}</td>
-            <td><a class="btn btn-sm btn-outline-primary" href="{% url 'factura_ticket' f.id %}">Ver</a></td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+{% extends 'base.html' %}
+{% block title %}Historial de Facturas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Historial de Facturas</h2>
+
+    <!-- Filtros -->
+    <div class="mb-3">
+        <a href="?filtro=hoy" class="btn btn-outline-primary {% if filtro == 'hoy' %}active{% endif %}">Hoy</a>
+        <a href="?filtro=semana" class="btn btn-outline-primary {% if filtro == 'semana' %}active{% endif %}">Esta Semana</a>
     </div>
-  </body>
-</html>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Factura</th>
+                <th>Cliente</th>
+                <th>Barbero/Estilista</th>
+                <th>Fecha</th>
+                <th>Total C$</th>
+                <th>Comisión Negocio C$</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for f in facturas %}
+            <tr>
+                <td>{{ f.codigo }}</td>
+                <td>{{ f.cliente }}</td>
+                <td>{{ f.barbero }}</td>
+                <td>{{ f.fecha|date:"d/m/Y H:i" }}</td>
+                <td>{{ f.total }}</td>
+                <td>{{ f.comision_negocio|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center">No hay facturas</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h4>Total facturado: C$ {{ total_facturado|floatformat:2 }}</h4>
+    <h4>Comisión negocio: C$ {{ total_comision_negocio|floatformat:2 }}</h4>
+</div>
+{% endblock %}
