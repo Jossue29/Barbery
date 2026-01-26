@@ -12,4 +12,5 @@ urlpatterns = [
     path('cobro/', views.cobro, name='cobro'),
     path('ajax/factura/', views.ajax_cargar_factura, name='ajax_cargar_factura'),
     path('ajax/cobrar/', views.ajax_cobrar_factura, name='ajax_cobrar_factura'),
+    path('ajax/mis-cobros/', views.ajax_mis_cobros, name='ajax_mis_cobros'),
 ]

@@ -5,13 +5,48 @@
 <div class="container mt-4">
   <h2>Cobro de Factura</h2>
 
+  <!-- Buscar factura -->
   <div class="mb-3">
     <label>Ingrese código de factura</label>
     <input type="text" id="codigoFactura" class="form-control" maxlength="12">
     <button class="btn btn-primary mt-2" onclick="cargarFactura()">Buscar</button>
+    <!-- Botón para ver cobros pendientes -->
+    <button class="btn btn-info mt-2" data-bs-toggle="modal" data-bs-target="#modalCobros">
+      Ver mis cobros pendientes
+    </button>
   </div>
 
-  <div id="detalleFactura" style="display:none;">
+  <!-- Cobros pendientes modal -->
+  <div class="modal fade" id="modalCobros" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Cobros Pendientes</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Factura</th>
+                <th>Cliente</th>
+                <th>Fecha</th>
+                <th>Monto C$</th>
+              </tr>
+            </thead>
+            <tbody id="modalCobrosBody">
+              <!-- Aquí se llenará vía JS -->
+            </tbody>
+          </table>
+          <h4>Total a cobrar: C$ <span id="modalTotalCobros">{{ total_cobros }}</span></h4>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Detalle factura -->
+  <div id="detalleFactura" style="display:none;" class="mt-4">
     <h4>Factura: <span id="facturaCodigo"></span></h4>
     <p>Cliente: <span id="facturaCliente"></span></p>
     <p>Fecha: <span id="facturaFecha"></span></p>
@@ -36,6 +71,27 @@
 </div>
 
 <script>
+document.querySelector('[data-bs-target="#modalCobros"]').addEventListener('click', function(){
+    fetch('/facturacion/ajax/mis-cobros/')
+        .then(res => res.json())
+        .then(data => {
+            if(!data.ok) return alert('No se pudieron cargar los cobros');
+
+            const tbody = document.getElementById('modalCobrosBody');
+            tbody.innerHTML = '';
+            data.cobros.forEach(c => {
+                tbody.innerHTML += `<tr>
+                    <td>${c.codigo}</td>
+                    <td>${c.cliente}</td>
+                    <td>${c.fecha}</td>
+                    <td>${c.monto.toFixed(2)}</td>
+                </tr>`;
+            });
+
+            document.getElementById('modalTotalCobros').innerText = data.total.toFixed(2);
+        });
+});
+
 function cargarFactura() {
     const codigo = document.getElementById('codigoFactura').value.trim();
     if (!codigo) return alert('Ingrese un código');

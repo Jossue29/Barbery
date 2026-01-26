@@ -232,3 +232,30 @@ def ajax_cobrar_factura(request):
     Cobro.objects.create(barbero=request.user, factura=factura, monto=comision)
 
     return JsonResponse({'ok': True, 'msg': f'Cobro realizado: C$ {comision:.2f}'})
+
+@login_required
+@role_required(['BARBERO', 'ESTILISTA'])
+def mis_cobros(request):
+    # Solo cobros no pagados
+    cobros = Cobro.objects.filter(barbero=request.user, pagado=False).select_related('factura','factura__cliente')
+    total_cobros = sum(c.monto for c in cobros)
+    return render(request, 'facturacion/cobro.html', {'cobros': cobros, 'total_cobros': total_cobros})
+
+@login_required
+@role_required(['BARBERO', 'ESTILISTA'])
+def ajax_mis_cobros(request):
+    cobros = Cobro.objects.filter(barbero=request.user, pagado=False).select_related('factura', 'factura__cliente')
+    data = []
+    total = 0
+    for c in cobros:
+        data.append({
+            'id': c.id,
+            'codigo': c.factura.codigo_factura,
+            'cliente': c.factura.cliente.nombre,
+            'fecha': c.factura.fecha.strftime("%d/%m/%Y"),
+            'monto': float(c.monto)
+        })
+        total += float(c.monto)
+
+    return JsonResponse({'ok': True, 'cobros': data, 'total': total})
+
