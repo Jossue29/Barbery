@@ -13,13 +13,19 @@ from .models import Factura, DetalleFactura, Cobro
 from users.decorators import role_required
 from django.db.models import Sum
 from datetime import datetime, timedelta
+from django.utils import timezone
+from django.db.models.functions import TruncDate
+
 # views.py
 import qrcode
 from io import BytesIO
 import base64
+from django.db.models import Sum
+from django.http import JsonResponse
+from django.utils import timezone
 
 User = get_user_model()
-
+DIA_PAGO = 5
 
 @login_required
 @role_required(['CAJERO', 'ADMIN'])
@@ -264,36 +270,43 @@ def ajax_mis_cobros(request):
 @login_required
 @role_required(['ADMIN', 'CAJERO'])
 def historial_facturas(request):
-    # Filtro por día o semana
     filtro = request.GET.get('filtro', 'hoy')
-    now = datetime.now()
+    barbero_id = request.GET.get('barbero')
+    hoy = timezone.localdate()
 
+    # Queryset base
+    facturas = Factura.objects.select_related('barbero', 'cliente').order_by('-fecha')
+
+    # 🔥 Filtro por fecha usando TruncDate para zona horaria
     if filtro == 'hoy':
-        inicio = datetime(now.year, now.month, now.day)
-        fin = inicio + timedelta(days=1)
+        facturas = facturas.annotate(
+            fecha_local=TruncDate('fecha', tzinfo=timezone.get_current_timezone())
+        ).filter(fecha_local=hoy)
     elif filtro == 'semana':
-        inicio = now - timedelta(days=now.weekday())  # lunes
-        inicio = datetime(inicio.year, inicio.month, inicio.day)
-        fin = inicio + timedelta(days=7)
-    else:
-        inicio = None
-        fin = None
+        inicio_semana = hoy - timedelta(days=hoy.weekday())
+        fin_semana = inicio_semana + timedelta(days=6)
+        facturas = facturas.annotate(
+            fecha_local=TruncDate('fecha', tzinfo=timezone.get_current_timezone())
+        ).filter(fecha_local__range=(inicio_semana, fin_semana))
 
-    facturas = Factura.objects.all().order_by('-fecha')
-    if inicio and fin:
-        facturas = facturas.filter(fecha__gte=inicio, fecha__lt=fin)
+    # 🔹 Filtro por barbero (agregado)
+    if barbero_id:
+        facturas = facturas.filter(barbero_id=barbero_id)
 
-    # Crear lista de facturas con comisión por fila
+    print('FACTURAS:', facturas.count())
+    print('BARBERO:', barbero_id)
+
+    # Crear lista de facturas
     facturas_list = []
-    total_facturado = 0
-    total_comision_negocio = 0
+    total_facturado = Decimal('0.00')
+    total_comision_negocio = Decimal('0.00')
 
     for f in facturas:
         comision = f.total * Decimal('0.5')
         facturas_list.append({
             'codigo': f.codigo_factura,
             'cliente': f.cliente.nombre,
-            'barbero': f"{f.barbero.nombre} {f.barbero.apellido}",
+            'barbero': f.barbero.get_full_name() or f.barbero.username,
             'fecha': f.fecha,
             'total': f.total,
             'comision_negocio': comision
@@ -301,9 +314,52 @@ def historial_facturas(request):
         total_facturado += f.total
         total_comision_negocio += comision
 
+    # Total pendiente por barbero
+    total_pendiente = Decimal('0.00')
+    if barbero_id:
+        total_pendiente = Cobro.objects.filter(
+            barbero_id=barbero_id,
+            pagado=False
+        ).aggregate(total=Sum('monto'))['total'] or Decimal('0.00')
+
+    # Lista de barberos para el select
+    barberos = User.objects.filter(rol__in=['BARBERO', 'ESTILISTA'])
+
     return render(request, 'facturacion/historial.html', {
         'facturas': facturas_list,
         'total_facturado': total_facturado,
         'total_comision_negocio': total_comision_negocio,
+        'total_pendiente': total_pendiente,
+        'barberos': barberos,
+        'barbero_id': barbero_id,
         'filtro': filtro,
+        'es_dia_pago': timezone.now().weekday() == DIA_PAGO
+    })
+
+@login_required
+@role_required(['ADMIN', 'CAJERO'])
+def pagar_cobros_barbero(request):
+    barbero_id = request.POST.get('barbero_id')
+
+    if not barbero_id:
+        return JsonResponse({'ok': False, 'msg': 'Barbero no válido'})
+
+    # Solo cobros pendientes
+    cobros = Cobro.objects.filter(
+        barbero_id=barbero_id,
+        pagado=False
+    )
+
+    if not cobros.exists():
+        return JsonResponse({'ok': False, 'msg': 'Este barbero ya no tiene cobros pendientes'})
+
+    # Marcar como pagados
+    cantidad = cobros.update(
+        pagado=True,
+        fecha=timezone.now()
+    )
+
+    return JsonResponse({
+        'ok': True,
+        'msg': f'Pago realizado correctamente ({cantidad} cobros marcados como pagados)'
     })

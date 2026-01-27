@@ -14,4 +14,6 @@ urlpatterns = [
     path('ajax/cobrar/', views.ajax_cobrar_factura, name='ajax_cobrar_factura'),
     path('ajax/mis-cobros/', views.ajax_mis_cobros, name='ajax_mis_cobros'),
     path('historial/', views.historial_facturas, name='historial_facturas'),
+    path('ajax/pagar-barbero/', views.pagar_cobros_barbero, name='pagar_cobros_barbero'),
+
 ]
