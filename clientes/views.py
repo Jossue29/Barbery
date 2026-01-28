@@ -4,12 +4,23 @@ from .models import Cliente
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.db.models import Q
 
 
 @login_required
 def list_clientes(request):
+    q = request.GET.get('q', '').strip()
     clientes = Cliente.objects.all()
-    return render(request, 'clientes/list.html', {'clientes': clientes})
+
+    if q:
+        clientes = clientes.filter(Q(nombre__icontains=q) | Q(telefono__icontains=q))
+
+    paginator = Paginator(clientes, 10)  # 10 clientes por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'clientes/list.html', {'clientes': page_obj, 'page_obj': page_obj})
 
 
 def api_search_cliente(request):
