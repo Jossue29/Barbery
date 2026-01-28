@@ -12,33 +12,27 @@
     </li>
 
     <li class="nav-title">Gestión</li>
-
+    {% if user.rol == 'ADMIN' or user.rol == 'CAJERO' %}
     <li class="nav-item">
       <a class="nav-link" href="/clientes/">
         <i class="cil-user"></i> Clientes
       </a>
     </li>
-
     <li class="nav-item">
       <a class="nav-link" href="{% url 'cortes_list' %}">
         <i class="cil-cut"></i> Cortes
       </a>
     </li>
-
     <li class="nav-item">
       <a class="nav-link" href="{% url 'factura_crear' %}">
         <i class="cil-file"></i> Facturación
       </a>
     </li>
-    {% if user.rol in 'ADMIN CAJERO' %}
     <li class="nav-item">
       <a class="nav-link" href="{% url 'historial_facturas' %}">
         <i class="cil-file"></i> Historial de Facturas
       </a>
     </li>
-    {% endif %}
-
-    {% if request.user.rol == 'ADMIN' %}
     <li class="nav-item">
       <a class="nav-link" href="{% url 'users' %}">
         <i class="cil-people"></i> Usuarios
@@ -47,15 +41,17 @@
     {% endif %}
 
       <!-- Cobro (solo barbero/estilista) -->
-    {% if user.rol in 'BARBERO ESTILISTA' %}
+    {% if user.rol == 'BARBERO' or user.rol == 'ESTILISTA' %}
     <li class="nav-item">
       <a class="nav-link" href="{% url 'cobro' %}">
         <i class="cil-dollar"></i> Cobro
       </a>
     </li>
     {% endif %}
-
-
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'perfil' %}">
+        <i class="cil-user"></i> Mi cuenta
+    </a>
     {% if request.user.is_staff %}
     <li class="nav-item mt-auto">
       <a class="nav-link text-danger" href="/admin/">
@@ -63,5 +59,6 @@
       </a>
     </li>
     {% endif %}
+    
   </ul>
 </aside>

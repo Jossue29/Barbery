@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Recibo de pago</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 14px; }
+        h2 { color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background: #eee; }
+    </style>
+</head>
+<body>
+    <h2>Recibo de pago</h2>
+    <p>Hola {{ barbero.get_full_name }},</p>
+    <p>Se ha realizado el pago de <strong>{{ cantidad }} cobros</strong>.</p>
+    <p>Total pagado: C$ {{ total_pagado|floatformat:2 }}</p>
+    <p>Fecha: {{ fecha|date:"d/m/Y H:i" }}</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Factura</th>
+                <th>Monto C$</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in cobros %}
+            <tr>
+                <td>{{ c.factura.codigo_factura }}</td>
+                <td>{{ c.monto|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p>Gracias por tu trabajo.</p>
+</body>
+</html>

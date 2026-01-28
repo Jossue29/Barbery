@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+
+    <!-- COLUMNA IZQUIERDA -->
+    <div class="col-md-6">
+      <div class="card mb-4 shadow-sm p-3 bg-light">
+        <div class="card-header fw-bold">Datos personales</div>
+        <div class="card-body">
+          <form id="perfilForm">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label>Nombre</label>
+              {{ form.nombre }}
+            </div>
+            <div class="mb-3">
+              <label>Apellido</label>
+              {{ form.apellido }}
+            </div>
+            <div class="mb-3">
+              <label>Email</label>
+              {{ form.email }}
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLUMNA DERECHA -->
+    <div class="col-md-6">
+      <div class="card mb-4 shadow-sm p-3 bg-light">
+        <div class="card-header fw-bold">Contacto</div>
+        <div class="card-body">
+          <form id="perfilFormRight">
+            <div class="mb-3">
+              <label>Teléfono</label>
+              {{ form.telefono }}
+            </div>
+            <div class="mb-3">
+              <label>Dirección</label>
+              {{ form.direccion }}
+            </div>
+
+            <!-- BOTONES AL FINAL -->
+            <div class="d-flex justify-content-between mt-3">
+              <button type="submit" class="btn btn-success btn-sm w-45" id="guardarCambiosBtn">
+                Guardar cambios
+              </button>
+              <button type="button" class="btn btn-warning btn-sm w-45"
+                      data-coreui-toggle="modal" data-coreui-target="#cambiarPasswordModal">
+                Cambiar contraseña
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL CAMBIAR CONTRASEÑA -->
+<div class="modal fade" id="cambiarPasswordModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-sm">
+      <div class="modal-header">
+        <h5 class="modal-title">Cambiar contraseña</h5>
+        <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="passwordForm">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label>Contraseña actual</label>
+            {{ password_form.old_password }}
+          </div>
+          <div class="mb-3">
+            <label>Nueva contraseña</label>
+            {{ password_form.new_password1 }}
+          </div>
+          <div class="mb-3">
+            <label>Confirmar nueva contraseña</label>
+            {{ password_form.new_password2 }}
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-coreui-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary btn-sm" id="guardarPasswordBtn">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div id="toastMsg" class="toast align-items-center text-bg-success border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="toastBody">✔ Acción realizada correctamente</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-coreui-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Guardar cambios de perfil
+const guardarBtn = document.getElementById('guardarCambiosBtn');
+guardarBtn.addEventListener('click', function(e){
+  e.preventDefault();
+  const form = document.getElementById('perfilForm');
+  const formRight = document.getElementById('perfilFormRight');
+  const data = new FormData();
+  for (let pair of new FormData(form)) data.append(pair[0], pair[1]);
+  for (let pair of new FormData(formRight)) data.append(pair[0], pair[1]);
+
+  fetch(window.location.href, {
+    method: 'POST',
+    body: data,
+    headers: {'X-Requested-With': 'XMLHttpRequest'}
+  })
+  .then(res => res.json())
+  .then(json => {
+    if(json.ok) showToast('Datos actualizados correctamente', 'success');
+    else {
+      const errors = Object.values(json.errors || {}).flat().join(', ');
+      showToast(errors || 'Error al guardar', 'danger');
+    }
+  });
+});
+
+// Cambiar contraseña
+const passwordBtn = document.getElementById('guardarPasswordBtn');
+passwordBtn.addEventListener('click', function(){
+  const passwordForm = document.getElementById('passwordForm');
+  const data = new FormData(passwordForm);
+
+  fetch("{% url 'perfil' %}", {
+    method: 'POST',
+    body: data,
+    headers: {'X-Requested-With': 'XMLHttpRequest'}
+  })
+  .then(res => res.json())
+  .then(json => {
+    if(json.ok){
+      showToast('Contraseña actualizada correctamente', 'success');
+      const modalEl = document.getElementById('cambiarPasswordModal');
+      const modal = coreui.Modal.getInstance(modalEl) || new coreui.Modal(modalEl);
+      modal.hide();
+      passwordForm.reset();
+    } else {
+      const errors = Object.values(json.errors || {}).flat().join(', ');
+      showToast(errors || 'Error al actualizar contraseña', 'danger');
+    }
+  });
+});
+
+// Toast CoreUI
+function showToast(message, type='success'){
+  const toastEl = document.getElementById('toastMsg');
+  const toastBody = document.getElementById('toastBody');
+  toastEl.className = `toast align-items-center text-bg-${type} border-0 shadow`;
+  toastBody.innerText = message;
+  const toast = new coreui.Toast(toastEl, {delay: 2500});
+  toast.show();
+}
+</script>
+{% endblock %}

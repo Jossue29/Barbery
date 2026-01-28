@@ -48,7 +48,6 @@ class UserCreateForm(UserCreationForm):
 
     def save(self, commit=True):
         user = super().save(commit=False)
-
         if commit:
             user.save()
             self._assign_group(user)
@@ -109,3 +108,22 @@ class UserUpdateForm(UserChangeForm):
         user.groups.clear()
         group, _ = Group.objects.get_or_create(name=user.rol)
         user.groups.add(group)
+
+class PerfilForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ('nombre', 'apellido', 'email', 'telefono', 'direccion')
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'apellido': forms.TextInput(attrs={'class': 'form-control'}),
+            'telefono': forms.TextInput(attrs={'class': 'form-control'}),
+            'direccion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        if User.objects.exclude(pk=self.instance.pk).filter(email=email).exists():
+            raise forms.ValidationError('Este correo ya está en uso')
+        return email
+
