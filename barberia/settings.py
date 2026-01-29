@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     'clientes',
     'cortes',
     'facturacion',
+    'barberia',
 ]
 
 
