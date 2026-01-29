@@ -7,6 +7,9 @@ from .forms import UserCreateForm, UserUpdateForm, PerfilForm
 from .decorators import role_required
 from django.core.paginator import Paginator
 from django.http import JsonResponse
+from django.utils import timezone
+from datetime import timedelta
+from facturacion.models import Factura
 
 
 User = get_user_model()
@@ -91,3 +94,31 @@ def perfil(request):
     
     form = PerfilForm(instance=user)
     return render(request, 'users/perfil.html', {'form': form, 'password_form': password_form})
+
+@login_required
+def dashboard(request):
+    hoy = timezone.now().date()
+
+    # Semana actual (lunes → domingo)
+    inicio_semana = hoy - timedelta(days=hoy.weekday())
+    fin_semana = inicio_semana + timedelta(days=6)
+
+    facturas = Factura.objects.filter(
+        fecha__date__range=[inicio_semana, fin_semana]
+    )
+
+    ingreso_total = sum(f.total_factura for f in facturas)
+
+    # 👉 comisión (ajusta porcentaje si quieres)
+    porcentaje_comision = 0.20
+    comision = round(ingreso_total * porcentaje_comision, 2)
+
+    context = {
+        'ingreso_total': ingreso_total,
+        'comision': comision,
+        'inicio_semana': inicio_semana,
+        'fin_semana': fin_semana,
+        'total_facturas': facturas.count(),
+    }
+
+    return render(request, 'users/dashboard.html', context)

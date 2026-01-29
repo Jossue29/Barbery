@@ -3,35 +3,46 @@
 
 {% block content %}
 <div class="container-fluid">
-  <h1 class="mb-4">Dashboard</h1>
+
+  <h3 class="mb-4">Dashboard</h3>
 
   <div class="row">
+
+    <!-- INGRESOS -->
     <div class="col-md-4">
-      <div class="card">
+      <div class="card shadow-sm">
         <div class="card-body">
-          <h5>Clientes</h5>
-          <p>Gestión de clientes</p>
+          <h6 class="text-muted">Ingresos de la semana</h6>
+          <h2 class="fw-bold">C$ {{ ingreso_total }}</h2>
+          <small class="text-muted">
+            {{ inicio_semana }} - {{ fin_semana }}
+          </small>
         </div>
       </div>
     </div>
 
+    <!-- COMISIÓN -->
     <div class="col-md-4">
-      <div class="card">
+      <div class="card shadow-sm border-success">
         <div class="card-body">
-          <h5>Cortes</h5>
-          <p>Historial de cortes</p>
+          <h6 class="text-muted">Mi comisión</h6>
+          <h2 class="fw-bold text-success">C$ {{ comision }}</h2>
+          <small class="text-muted">20% del total</small>
         </div>
       </div>
     </div>
 
+    <!-- FACTURAS -->
     <div class="col-md-4">
-      <div class="card">
+      <div class="card shadow-sm">
         <div class="card-body">
-          <h5>Facturación</h5>
-          <p>Crear y ver facturas</p>
+          <h6 class="text-muted">Facturas</h6>
+          <h2 class="fw-bold">{{ total_facturas }}</h2>
+          <small class="text-muted">Esta semana</small>
         </div>
       </div>
     </div>
+
   </div>
 </div>
 {% endblock %}
